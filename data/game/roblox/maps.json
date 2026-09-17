@@ -1,0 +1,24 @@
+[
+	{
+		"id": "the-mimic",
+		"name": "The Mimic",
+		"category": "Horror",
+		"tags": ["jumpscare", "puzzle", "story"],
+		"min_players": 1,
+		"max_players": 4,
+		"difficulty": "Hard",
+		"description": "Game horor petualangan berbasis mitologi urban Jepang dengan atmosfer gelap dan teka-teki.",
+		"link": "https://www.roblox.com/games/6243699076/The-Mimic"
+	},
+	{
+		"id": "doors",
+		"name": "Doors",
+		"category": "Horror",
+		"tags": ["survival", "roguelite", "monsters"],
+		"min_players": 1,
+		"max_players": 12,
+		"difficulty": "Medium",
+		"description": "Menjelajahi 100 pintu di dalam hotel berhantu sambil menghindari berbagai entitas mematikan.",
+		"link": "https://www.roblox.com/games/6516141723/DOORS"
+	}
+]
