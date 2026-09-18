@@ -1,10 +1,12 @@
 const botRules = require('../data/bot-rules.json');
 const { groqApiKey, groqModel } = require('../config');
+const { getEmojiListText, sanitizeAiText } = require('./emojis');
 
 function buildSystemPrompt(extraRules = []) {
 	const { persona } = botRules;
+	const emojiList = getEmojiListText();
 
-	return [
+	const lines = [
 		`Kamu adalah ${persona.name}, ${persona.role}.`,
 		persona.description,
 		`Tone: ${persona.tone}.`,
@@ -14,7 +16,25 @@ function buildSystemPrompt(extraRules = []) {
 		'Aturan umum:',
 		...persona.general_rules.map((rule) => `- ${rule}`),
 		...extraRules.map((rule) => `- ${rule}`),
-	].join('\n');
+	];
+
+	if (emojiList) {
+		lines.push(
+			'Custom emoji: JANGAN menulis format Discord manual seperti <:nama:id> atau <a:nama:id>.',
+			'Untuk ekspresi, tempel HANYA token seperti {{wony_smile}} (dengan kurung kurawal ganda).',
+			'Contoh benar: Halo guys {{wony_smile}}',
+			'Contoh salah: <a:wony_smile2> , <:wony:123> , 😊',
+			'Daftar token yang boleh dipakai:',
+			emojiList,
+		);
+	}
+	else {
+		lines.push(
+			'Sementara custom emoji belum tersedia. Jangan gunakan emoji Unicode sama sekali.',
+		);
+	}
+
+	return lines.join('\n');
 }
 
 async function askGroq(question, options = {}) {
@@ -60,19 +80,21 @@ async function askGroq(question, options = {}) {
 		throw new Error('Groq API returned an empty response');
 	}
 
-	return answer;
+	return sanitizeAiText(answer);
 }
 
-async function generateWelcomeGreeting(displayName) {
+async function generateWelcomeGreeting(displayName, serverName) {
 	return askGroq(
-		`Ada member baru bernama "${displayName}" yang baru join server. Tulis sapaan selamat datang yang hangat.`,
+		`Ada member baru bernama "${displayName}" yang baru join server "${serverName}". Tulis sapaan selamat datang yang hangat dan sebut nama servernya.`,
 		{
 			extraRules: [
 				'Kamu sedang berperan sebagai penyambut server yang ramah dan antusias.',
 				'Tulis sapaan singkat 2-4 kalimat saja.',
+				`Sebut nama server "${serverName}" secara natural di sapaan.`,
 				'Jangan gunakan mention Discord seperti <@id> atau @username.',
 				'Jangan ulang nama user di awal kalimat jika tidak perlu; fokus ke sambutan yang hangat.',
 				'Ajak member baru untuk kenalan dan betah di server dengan gaya naturalmu.',
+				'Sertakan 1 token emoji ramah seperti {{wony_smile}}, {{wony_cute}}, atau {{wony_love}}.',
 			],
 			temperature: 0.85,
 			maxTokens: 300,

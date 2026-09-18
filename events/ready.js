@@ -1,13 +1,30 @@
 const { Events } = require('discord.js');
-const { prefix, presence } = require('../config');
+const { prefix, presence, presenceRefreshMs } = require('../config');
+const { loadBotEmojis } = require('../utils/emojis');
+
+function applyPresence(client) {
+	client.user.setPresence(presence);
+}
 
 module.exports = {
 	name: Events.ClientReady,
 	once: true,
-	execute(readyClient) {
-		readyClient.user.setPresence(presence);
+	async execute(readyClient) {
+		applyPresence(readyClient);
+
+		setInterval(() => {
+			applyPresence(readyClient);
+		}, presenceRefreshMs);
+
+		try {
+			await loadBotEmojis(readyClient);
+		}
+		catch (error) {
+			console.error('Failed to load application emojis:', error);
+		}
 
 		console.log(`Ready! Logged in as ${readyClient.user.tag}`);
 		console.log(`Prefix commands ready with prefix: ${prefix}`);
+		console.log(`Presence refresh every ${presenceRefreshMs / 1000}s`);
 	},
 };

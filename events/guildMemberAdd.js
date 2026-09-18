@@ -1,6 +1,7 @@
 const { Events } = require('discord.js');
 const { channelId } = require('../config');
 const { generateWelcomeGreeting } = require('../utils/groq');
+const { getEmoji } = require('../utils/emojis');
 
 module.exports = {
 	name: Events.GuildMemberAdd,
@@ -18,16 +19,19 @@ module.exports = {
 		}
 
 		try {
+			const serverName = member.guild.name;
 			const greeting = await generateWelcomeGreeting(
 				member.displayName || member.user.username,
+				serverName,
 			);
 
 			await channel.send(`${member} ${greeting}`);
 		}
 		catch (error) {
 			console.error(error);
+			const smile = getEmoji('wony_smile') || getEmoji('wony_cute') || getEmoji('wony');
 			await channel.send(
-				`${member} Halo! Selamat datang di server ya, semoga betah banget di sini~`,
+				`${member} Halo! Selamat datang di server **${member.guild.name}** ya, semoga betah banget di sini~ ${smile}`.trim(),
 			);
 		}
 	},
