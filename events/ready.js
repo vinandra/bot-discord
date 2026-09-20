@@ -1,9 +1,18 @@
 const { Events } = require('discord.js');
-const { prefix, presence, presenceRefreshMs } = require('../config');
+const { prefix, guildId, buildPresence, presenceRefreshMs } = require('../config');
 const { loadBotEmojis } = require('../utils/emojis');
 
+function getTargetGuild(client) {
+	if (guildId) {
+		return client.guilds.cache.get(guildId) || null;
+	}
+
+	return client.guilds.cache.first() || null;
+}
+
 function applyPresence(client) {
-	client.user.setPresence(presence);
+	const guild = getTargetGuild(client);
+	client.user.setPresence(buildPresence(guild));
 }
 
 module.exports = {
@@ -23,8 +32,12 @@ module.exports = {
 			console.error('Failed to load application emojis:', error);
 		}
 
+		const guild = getTargetGuild(readyClient);
+		const activityName = buildPresence(guild).activities[0].name;
+
 		console.log(`Ready! Logged in as ${readyClient.user.tag}`);
 		console.log(`Prefix commands ready with prefix: ${prefix}`);
+		console.log(`Presence: Streaming ${activityName}`);
 		console.log(`Presence refresh every ${presenceRefreshMs / 1000}s`);
 	},
 };

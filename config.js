@@ -9,6 +9,24 @@ if (!token) {
 	process.exit(1);
 }
 
+const streamUrl = process.env.STREAM_URL || 'https://www.twitch.tv/lofigirl';
+
+function buildPresence(guild) {
+	const serverName = guild?.name || 'santuy';
+	const memberCount = guild?.memberCount ?? 0;
+
+	return {
+		status: 'online',
+		activities: [
+			{
+				name: `with ${serverName} ${memberCount} member`,
+				type: ActivityType.Streaming,
+				url: streamUrl,
+			},
+		],
+	};
+}
+
 module.exports = {
 	token,
 	clientId: process.env.CLIENT_ID,
@@ -20,15 +38,7 @@ module.exports = {
 	prefix: process.env.PREFIX || 'w!',
 	groqApiKey: process.env.GROQ_API_KEY,
 	groqModel: process.env.GROQ_MODEL || 'openai/gpt-oss-20b',
-	presence: {
-		status: 'online',
-		activities: [
-			{
-				name: 'with santuy',
-				type: ActivityType.Streaming,
-				url: process.env.STREAM_URL || 'https://www.twitch.tv/lofigirl',
-			},
-		],
-	},
+	streamUrl,
+	buildPresence,
 	presenceRefreshMs: Number(process.env.PRESENCE_REFRESH_MS) || 5 * 60 * 1000,
 };
