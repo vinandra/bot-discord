@@ -1,7 +1,10 @@
 const { Events } = require('discord.js');
 const { channelId } = require('../config');
-const { generateWelcomeGreeting } = require('../utils/groq');
-const { getEmoji } = require('../utils/emojis');
+const {
+	generateWelcomeGreeting,
+	getDefaultWelcomeGreeting,
+	loadBotRules,
+} = require('../utils/groq');
 
 module.exports = {
 	name: Events.GuildMemberAdd,
@@ -18,21 +21,36 @@ module.exports = {
 			return;
 		}
 
-		try {
-			const serverName = member.guild.name;
-			const greeting = await generateWelcomeGreeting(
-				member.displayName || member.user.username,
-				serverName,
-			);
+		const displayName = member.displayName || member.user.username;
+		const serverName = member.guild.name;
 
-			await channel.send(`${member} ${greeting}`);
+		let greeting;
+
+		try {
+			const botRules = loadBotRules();
+			if (!botRules?.persona) {
+				throw new Error('bot-rules.json persona is missing');
+			}
+
+			greeting = await generateWelcomeGreeting(displayName, serverName);
 		}
 		catch (error) {
-			console.error(error);
-			const smile = getEmoji('wony_smile') || getEmoji('wony_cute') || getEmoji('wony');
-			await channel.send(
-				`${member} Halo! Selamat datang di server **${member.guild.name}** ya, semoga betah banget di sini~ ${smile}`.trim(),
-			);
+			const message = error?.message || String(error);
+			const isRateLimited = message.includes('429') || /rate limit/i.test(message);
+			const isUnavailable =
+				isRateLimited
+				|| /timeout|fetch failed|ENOTFOUND|ECONNRESET|503|502/i.test(message);
+
+			if (isUnavailable) {
+				console.warn(`Welcome AI unavailable, using default message: ${message}`);
+			}
+			else {
+				console.error(error);
+			}
+
+			greeting = getDefaultWelcomeGreeting(serverName);
 		}
+
+		await channel.send(`${member} ${greeting}`);
 	},
 };

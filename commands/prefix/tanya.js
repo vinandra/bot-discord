@@ -1,6 +1,5 @@
 const { askGroq } = require('../../utils/groq');
 const { splitMessage } = require('../../utils/splitMessage');
-const { getEmoji } = require('../../utils/emojis');
 const { prefix } = require('../../config');
 
 module.exports = {
@@ -28,9 +27,8 @@ module.exports = {
 		}
 		catch (error) {
 			console.error(error);
-			const sad = getEmoji('wony_shock') || getEmoji('wony');
 			await message.reply(
-				`Maaf ya, lagi gagal mikir. Coba lagi sebentar lagi ya~ ${sad}`.trim(),
+				'Sementara aku belum bisa menjawab. Coba lagi sebentar lagi ya. 🌙',
 			);
 		}
 	},
