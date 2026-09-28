@@ -68,6 +68,7 @@ module.exports = {
 		process.env.NGBROL_CHANNEL_ID ||
 		process.env.NGOBROL_CHANNEL_ID ||
 		process.env.CHANNEL_ID,
+	welcomeByeChannelId: process.env.WELCOME_BYE_CHANNEL_ID,
 	prefix: process.env.PREFIX || 'm>',
 	groqApiKey: process.env.GROQ_API_KEY,
 	groqModel: process.env.GROQ_MODEL || 'openai/gpt-oss-20b',
