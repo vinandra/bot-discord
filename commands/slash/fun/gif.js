@@ -1,49 +1,82 @@
-const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
+const {
+	ActionRowBuilder,
+	ButtonBuilder,
+	ButtonStyle,
+	ComponentType,
+	EmbedBuilder,
+	MessageFlags,
+	SlashCommandBuilder,
+} = require('discord.js');
 const { searchGif } = require('../../../utils/giphy');
 
-const REACTION_APPROVE = '✅';
-const REACTION_DELETE = '🗑️';
-const REACTION_TIMEOUT_MS = 5 * 60 * 1000;
+const BUTTON_TIMEOUT_MS = 5 * 60 * 1000;
 
 function isExpiredInteraction(error) {
 	return error?.code === 10062 || error?.code === 40060;
 }
 
-async function attachGifReactions(message, userId) {
-	await message.react(REACTION_APPROVE);
-	await message.react(REACTION_DELETE);
+function gifButtons(disabled = false) {
+	return new ActionRowBuilder().addComponents(
+		new ButtonBuilder()
+			.setCustomId('gif_approve')
+			.setLabel('Sesuai')
+			.setEmoji('✅')
+			.setStyle(ButtonStyle.Success)
+			.setDisabled(disabled),
+		new ButtonBuilder()
+			.setCustomId('gif_delete')
+			.setLabel('Hapus')
+			.setEmoji('🗑️')
+			.setStyle(ButtonStyle.Danger)
+			.setDisabled(disabled),
+	);
+}
 
-	const collector = message.createReactionCollector({
-		filter: (reaction, user) =>
-			!user.bot
-			&& user.id === userId
-			&& [REACTION_APPROVE, REACTION_DELETE].includes(reaction.emoji.name),
-		time: REACTION_TIMEOUT_MS,
+function approvedButton() {
+	return new ActionRowBuilder().addComponents(
+		new ButtonBuilder()
+			.setCustomId('gif_approved')
+			.setLabel('Sesuai')
+			.setEmoji('✅')
+			.setStyle(ButtonStyle.Success)
+			.setDisabled(true),
+	);
+}
+
+function attachGifButtons(message, userId) {
+	const collector = message.createMessageComponentCollector({
+		componentType: ComponentType.Button,
+		time: BUTTON_TIMEOUT_MS,
+		filter: async (button) => {
+			if (button.user.id === userId) {
+				return true;
+			}
+
+			await button.reply({
+				content: 'Tombol ini cuma buat yang menjalankan `/gif` ya.',
+				flags: MessageFlags.Ephemeral,
+			}).catch(() => null);
+
+			return false;
+		},
 	});
 
-	collector.on('collect', async (reaction, user) => {
+	collector.on('collect', async (button) => {
 		try {
-			if (reaction.emoji.name === REACTION_DELETE) {
+			if (button.customId === 'gif_delete') {
 				collector.stop('deleted');
-				await message.delete().catch(() => null);
+				await button.deferUpdate();
+				await button.message.delete().catch(() => null);
 				return;
 			}
 
-			if (reaction.emoji.name === REACTION_APPROVE) {
+			if (button.customId === 'gif_approve') {
 				collector.stop('approved');
-				await reaction.users.remove(user.id).catch(() => null);
-
-				const trashReaction = message.reactions.cache.find(
-					(item) => item.emoji.name === REACTION_DELETE,
-				);
-
-				if (trashReaction) {
-					await trashReaction.remove().catch(() => null);
-				}
+				await button.update({ components: [approvedButton()] });
 			}
 		}
 		catch (error) {
-			console.error('Failed to handle gif reaction:', error);
+			console.error('Failed to handle gif button:', error);
 		}
 	});
 
@@ -52,7 +85,7 @@ async function attachGifReactions(message, userId) {
 			return;
 		}
 
-		await message.reactions.removeAll().catch(() => null);
+		await message.edit({ components: [gifButtons(true)] }).catch(() => null);
 	});
 }
 
@@ -97,10 +130,13 @@ module.exports = {
 					text: `GIPHY • ${gif.username} • ${query}`,
 				});
 
-			await interaction.editReply({ embeds: [embed] });
+			await interaction.editReply({
+				embeds: [embed],
+				components: [gifButtons()],
+			});
 
 			const message = await interaction.fetchReply();
-			await attachGifReactions(message, interaction.user.id);
+			attachGifButtons(message, interaction.user.id);
 		}
 		catch (error) {
 			if (isExpiredInteraction(error)) {

@@ -13,7 +13,7 @@ const streamUrl = process.env.STREAM_URL || 'https://www.twitch.tv/lofigirl';
 const profileId = process.env.PROFILE_ID;
 
 let presenceIndex = 0;
-let profileName = 'user';
+// let profileName = 'user';
 
 function setProfileName(name) {
 	if (name) {
@@ -27,7 +27,7 @@ function buildPresenceActivities(guild) {
 
 	return [
 		{
-			name: `with ${profileName}`,
+			name: `sedang memantau ${serverName}`,
 			type: ActivityType.Streaming,
 			url: streamUrl,
 		},
@@ -72,7 +72,8 @@ module.exports = {
 	prefix: process.env.PREFIX || 'm>',
 	groqApiKey: process.env.GROQ_API_KEY,
 	groqModel: process.env.GROQ_MODEL || 'openai/gpt-oss-20b',
-	giphyApiKey: process.env.GIPHY_API_KEY,
+	giphyApiKey: (process.env.GIPHY_API_KEY || '').trim().replace(/\\+$/g, ''),
+	tmdbApiKey: (process.env.TMDB_API_KEY || '').trim().replace(/\\+$/g, ''),
 	streamUrl,
 	profileId,
 	setProfileName,
